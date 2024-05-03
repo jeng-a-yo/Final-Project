@@ -3,18 +3,13 @@ from os import walk
 import cv2
 import time
 import numpy as np
-import torch
-import torchvision
+
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader, random_split
+
 from tqdm import tqdm
 
-
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (255, 0, 0)
-RED = (0, 0, 255)
+from myModels import *
 
 
 def MeasureTime(func):
@@ -26,16 +21,52 @@ def MeasureTime(func):
     return wrapper
 
 
+def Train(model, trainLoder, optimizer, criterion, epochs):
+
+    model.train()
+    for epoch in range(1, epochs+1):
+        progressBar = tqdm(enumerate(trainLoder), total=len(trainLoder), desc=f"Epoch {epoch}")
+
+        for batchIdx, (data, target) in progressBar:
+            optimizer.zero_grad()
+            predict = model(data)
+            loss = criterion(predict, target)
+            loss.backward()
+            optimizer.step()
+
+
+            progressBar.set_postfix({'loss': round(loss.item(), 6)})
+                
+    print("[Info] Training completed")
+
+def Test(model, testLoder):
+    model.eval()
+    correctCnt = 0
+    with torch.no_grad():
+        progress_bar = tqdm(testLoder, desc="Testing")
+        for data, target in progress_bar:
+            predict = model(data)
+            answer = predict.argmax(dim=1, keepdim=True)
+            correctCnt += answer.eq(target.view_as(answer)).sum().item()
+            progress_bar.set_postfix({'accuracy': int(100 * correctCnt / len(testLoder.dataset))})
+    
+    print(f"[Info] Test Results: Accuracy: {round(100 * correctCnt / len(testLoder.dataset), 2)}%")
+
+
 @MeasureTime
 def main():
 
     transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        transforms.Grayscale(num_output_channels=1),
+        transforms.Resize((28, 28)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
     ])
 
     dataDir = "NumberDataSet"
+    batchSize = 64
+    epochs = 5
+
 
     # Load the dataset
     dataset = datasets.ImageFolder(root=dataDir, transform=transform)
@@ -45,54 +76,29 @@ def main():
 
     trainSet, testSet = random_split(dataset, [trainSize, testSize])
 
-    trainLoader = DataLoader(trainSet, batch_size=32, shuffle=True)
-    testLoader = DataLoader(testSet, batch_size=32, shuffle=False)
+    trainLoader = DataLoader(trainSet, batch_size=batchSize, shuffle=True)
+    testLoader = DataLoader(testSet, batch_size=batchSize, shuffle=False)
 
     # Build the model
-    model = torchvision.models.resnet18(pretrained=True)  # Example model, you can use any model you want
+    # model = CNN()
+    # model = AlexNet(10)
+    model = PaperCNN(10)
 
-    # Modify the last layer according to your problem
-    numFtrs = model.fc.in_features
-    numClasses = len(dataset.classes)
-    model.fc = torch.nn.Linear(numFtrs, numClasses)
+
+    # model = models.vgg16()
 
     # Define loss function and optimizer
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
     # Train the model
-    numEpochs = 10
-    for epoch in range(numEpochs):
-        model.train()
-        runningLoss = 0.0
-        with tqdm(trainLoader, unit="batch") as tepoch:
-            tepoch.set_description(f"Epoch {epoch+1}")
-            for inputs, labels in tepoch:
-                optimizer.zero_grad()
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
-                loss.backward()
-                optimizer.step()
-                runningLoss += loss.item() * inputs.size(0)
-                tepoch.set_postfix(loss=runningLoss / len(trainSet))
-        print("Training Loss: {:.4f}".format(runningLoss / len(trainSet)))
+    Train(model, trainLoader, optimizer, criterion, epochs)
 
     # Sava the model
     torch.save(model.state_dict(), 'NumberModel.pth')
 
     # Evaluate the model
-    model.eval()
-    correct = 0
-    total = 0
-    with torch.no_grad():
-        for inputs, labels in tqdm(testLoader, unit="batch", desc="Testing"):
-            outputs = model(inputs)
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-
-    accuracy = correct / total
-    print('Accuracy on the test set: {:.2f}%'.format(100 * accuracy))
+    Test(model, testLoader)
 
 
 
