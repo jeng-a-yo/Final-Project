@@ -17,7 +17,8 @@ torch.manual_seed(42)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-dataDir = "NumberDataSet"
+dataDir = ["NumberDataSet", "EnglishDataSet", "SymbolDataSet"]
+modelName = ["NumberModel", "EnglishModel", "SymbolModel"]
 batchSize = 64
 epochs = 30
 learningRate = 0.001
@@ -98,57 +99,62 @@ def main():
         transforms.Normalize((0.1307,), (0.3081,)),
     ])
     
+    for i in range(len(dataDir)):
+        
+        st = time.time()
 
-    # Load the dataset
-    dataset = datasets.ImageFolder(root=dataDir, transform=transform)
+        # Load the dataset
+        dataset = datasets.ImageFolder(root=dataDir[i], transform=transform)
 
-    trainSize = int(0.8 * len(dataset))
-    testSize = len(dataset) - trainSize
+        trainSize = int(0.8 * len(dataset))
+        testSize = len(dataset) - trainSize
 
-    trainSet, testSet = random_split(dataset, [trainSize, testSize])
+        trainSet, testSet = random_split(dataset, [trainSize, testSize])
 
-    trainLoader = DataLoader(trainSet, batch_size=batchSize, shuffle=True)
-    testLoader = DataLoader(testSet, batch_size=batchSize, shuffle=False)
+        trainLoader = DataLoader(trainSet, batch_size=batchSize, shuffle=True)
+        testLoader = DataLoader(testSet, batch_size=batchSize, shuffle=False)
 
-    # Build the model
+        # Build the model
 
-    model = VideoCNN().to(device)
+        model = VideoCNN(in_channels=1, num_classes=len(os.listdir(dataDir[i]))).to(device)
 
-    # Define loss function and optimizer
-    criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=learningRate, momentum=momentum)
+        # Define loss function and optimizer
+        criterion = torch.nn.CrossEntropyLoss()
+        optimizer = torch.optim.SGD(model.parameters(), lr=learningRate, momentum=momentum)
 
-    # Train the model
-    trainAcc, trainLoss = Train(model, trainLoader, optimizer, criterion, epochs)
+        # Train the model
+        trainAcc, trainLoss = Train(model, trainLoader, optimizer, criterion, epochs)
 
-    # Evaluate the model
-    Test(model, testLoader)
+        # Evaluate the model
+        Test(model, testLoader)
 
-    # Sava the model
-    torch.save(model.state_dict(), 'NumberModel.pth')
+        # Sava the model
+        torch.save(model.state_dict(), f'{modelName[i]}.pth')
 
 
-    # make graph
-    plt.figure()
-    # loss
-    plt.subplot(2,1,1)
-    plt.plot(trainLoss, label='train loss')
-    plt.legend()
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.title('Loss')
-    # accuracy
-    plt.subplot(2,1,2)
-    plt.plot(trainAcc, label='train acc')
-    plt.legend()
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.title('Accuracy')
-    # save figure
-    plt.tight_layout()
-    plt.savefig('numberModelGraph.png')
-    plt.show()
+        # make graph
+        plt.figure()
+        # loss
+        plt.subplot(2,1,1)
+        plt.plot(trainLoss, label='train loss')
+        plt.legend()
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.title('Loss')
+        # accuracy
+        plt.subplot(2,1,2)
+        plt.plot(trainAcc, label='train acc')
+        plt.legend()
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+        plt.title('Accuracy')
+        # save figure
+        plt.tight_layout()
+        plt.savefig(f'{modelName[i]}Graph.png')
 
+
+        print(f"[Info] Spand Time: {round(time.time() - st, 4)} seconds")
+        print("================================================================")
 
 
 main()

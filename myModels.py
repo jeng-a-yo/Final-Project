@@ -6,10 +6,10 @@ from torchvision import transforms, datasets
 from torchvision import models
 from torch.utils.data import DataLoader, random_split
 
-class CNN(nn.Module):
+class YmshCNN(nn.Module):
 
     def __init__(self):
-        super(CNN, self).__init__()
+        super(YmshCNN, self).__init__()
 
         self.conv = nn.Conv2d(1, 32, 3)
         self.conv2 = nn.Conv2d(32, 32, 3)
@@ -37,6 +37,23 @@ class CNN(nn.Module):
         output = F.log_softmax(tensor, dim = 1)
         return output
 
+class VideoCNN(nn.Module):
+    def __init__(self, in_channels = 1, num_classes = 10):
+        super(VideoCNN, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        self.pool = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
+        self.conv2 = nn.Conv2d(in_channels=8, out_channels=16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        self.fc1 = nn.Linear(16*7*7, num_classes)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        x = self.pool(x)
+        x = F.relu(self.conv2(x))
+        x = self.pool(x)
+        x = x.reshape(x.shape[0], -1)
+        x = self.fc1(x)
+
+        return x
 
 class PaperCNN(nn.Module):
 
@@ -52,8 +69,8 @@ class PaperCNN(nn.Module):
         self.dropout2 = nn.Dropout2d(0.25)
         self.dropout3 = nn.Dropout2d(0.25)
 
-        self.fc1 = nn.Linear(1*1*256, 64)
-        self.fc2 = nn.Linear(1*1*64, 10)
+        self.fc1 = nn.Linear(256, 64)
+        self.fc2 = nn.Linear(64, 10)
 
 
     def forward(self, x):
@@ -84,6 +101,29 @@ class PaperCNN(nn.Module):
         tensor = self.fc2(tensor)
         output = F.log_softmax(tensor, dim = 1)
         return output
+
+class LittelFishModel(nn.Module):
+    def __init__(self):
+        super(LittelFishModel, self).__init__()
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+        self.fc1 = nn.Linear(64*7*7, 128)
+        self.fc2 = nn.Linear(128, 10)
+        self.dropout = nn.Dropout(0.5)
+        self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.relu = nn.ReLU()
+        self.softmax = nn.Softmax(dim=1)
+    
+    def forward(self, x):
+        x = self.relu(self.conv1(x))
+        x = self.maxpool(x)
+        x = self.relu(self.conv2(x))
+        x = self.maxpool(x)
+        x = x.view(-1, 64*7*7)
+        x = self.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = self.fc2(x)
+        return self.softmax(x)
 
 class AlexNet(nn.Module):
     def __init__(self, num_classes):

@@ -17,7 +17,7 @@ torch.manual_seed(42)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-dataDir = "NumberDataSet"
+dataDir = "EnglishDataSet"
 batchSize = 64
 epochs = 30
 learningRate = 0.001
@@ -125,7 +125,7 @@ def main():
     Test(model, testLoader)
 
     # Sava the model
-    torch.save(model.state_dict(), 'NumberModel.pth')
+    torch.save(model.state_dict(), 'EnglishModel.pth')
 
 
     # make graph

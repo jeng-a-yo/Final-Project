@@ -32,4 +32,4 @@ archive5 - https://www.kaggle.com/datasets/clarencezhao/handwritten-math-symbol-
 ---
 
 References
-    https://www.mdpi.com/1999-4893/15/4/129
+    * https://www.mdpi.com/1999-4893/15/4/129
