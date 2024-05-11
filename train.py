@@ -4,6 +4,7 @@ import cv2
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+import wandb
 
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader, random_split
@@ -14,6 +15,19 @@ from myModels import *
 
 np.random.seed(42)
 torch.manual_seed(42)
+
+wandb.init(
+    # set the wandb project where this run will be logged
+    project="my-awesome-project",
+
+    # track hyperparameters and run metadata
+    config={
+    "learning_rate": 0.001,
+    "architecture": "CNN",
+    "dataset": [{"dataset": "NumberDataSet"}, {"dataset": "EnglishDataSet"}, {"dataset": "SymbolDataSet"}],
+    "epochs": 30,
+    }
+)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
