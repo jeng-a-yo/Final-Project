@@ -3,6 +3,7 @@ from streamlit_drawable_canvas import st_canvas
 import numpy as np
 import pandas as pd
 import cv2
+from PIL import Image
 import string
 
 from myModels import *
@@ -32,7 +33,7 @@ def Predict(model, histLabels, img):
     prediction = torch.argmax(prediction, dim=1)
     prediction = prediction.item()
 
-    st.write(f"Prediction: {prediction}")
+    st.write(f"Prediction: {histLabels[prediction]}")
 
 
 canvas_result = st_canvas(
@@ -46,6 +47,14 @@ canvas_result = st_canvas(
     key="canvas",
 )
 
+
+transform = transforms.Compose([
+        transforms.Grayscale(num_output_channels=1),
+        transforms.Resize((28, 28)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,)),
+    ])
+
 width = 150
 height = 150
 
@@ -57,27 +66,31 @@ symbols = [chr(i) for i in range(33, 47+1)] + \
             [chr(i) for i in range(58, 64+1)] + \
             [chr(91)] + \
             [chr(i) for i in range(93, 96+1)] + \
-            [chr(i) for i in range(123, 126)]
+            [chr(i) for i in range(123, 126+1)]
 
-numberModel = VideoCNN(in_channels=1, num_classes=len(numbers))
-englishModel = VideoCNN(in_channels=1, num_classes=len(alphabets))
-symbolModel = VideoCNN(in_channels=1, num_classes=len(symbols))
+numberModel = PaperCNN(in_channels=1, num_classes=len(numbers))
+numberModel.load_state_dict(torch.load("NumberModel.pth"))
+
+englishModel = PaperCNN(in_channels=1, num_classes=len(alphabets))
+englishModel.load_state_dict(torch.load("EnglishModel.pth"))
+
+symbolModel = PaperCNN(in_channels=1, num_classes=len(symbols))
+symbolModel.load_state_dict(torch.load("SymbolModel.pth"))
+
+print("complete loading model")
+
 
 if st.button("Recognize"):
 
     img = canvas_result.image_data.astype(np.uint8)
-    print(img.shape)
-
-    img = cv2.resize(img, (28, 28))
-    print(img.shape)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    print(img.shape)
+    img = Image.fromarray(img)
+    
 
     st.image(img, width=width)
 
-    img = torch.tensor(img).unsqueeze(0).unsqueeze(0).float()
-    print(img.shape)
+    img = transform(img).unsqueeze(0).float()
 
+    
     if len(selectedModels) == 0:
         st.write("Please select at least one model")
     else:

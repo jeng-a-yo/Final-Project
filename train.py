@@ -4,7 +4,7 @@ import cv2
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-import wandb
+# import wandb
 
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader, random_split
@@ -16,25 +16,25 @@ from myModels import *
 np.random.seed(42)
 torch.manual_seed(42)
 
-wandb.init(
-    # set the wandb project where this run will be logged
-    project="my-awesome-project",
+# wandb.init(
+#     # set the wandb project where this run will be logged
+#     project="my-awesome-project",
 
-    # track hyperparameters and run metadata
-    config={
-    "learning_rate": 0.001,
-    "architecture": "CNN",
-    "dataset": [{"dataset": "NumberDataSet"}, {"dataset": "EnglishDataSet"}, {"dataset": "SymbolDataSet"}],
-    "epochs": 30,
-    }
-)
+#     # track hyperparameters and run metadata
+#     config={
+#     "learning_rate": 0.001,
+#     "architecture": "CNN",
+#     "dataset": [{"dataset": "NumberDataSet"}, {"dataset": "EnglishDataSet"}, {"dataset": "SymbolDataSet"}],
+#     "epochs": 30,
+#     }
+# )
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 dataDir = ["NumberDataSet", "EnglishDataSet", "SymbolDataSet"]
 modelName = ["NumberModel", "EnglishModel", "SymbolModel"]
 batchSize = 64
-epochs = 30
+epochs = 10
 learningRate = 0.001
 momentum = 0.9
 
@@ -130,7 +130,7 @@ def main():
 
         # Build the model
 
-        model = VideoCNN(in_channels=1, num_classes=len(os.listdir(dataDir[i]))).to(device)
+        model = PaperCNN(in_channels=1, num_classes=len(os.listdir(dataDir[i]))).to(device)
 
         # Define loss function and optimizer
         criterion = torch.nn.CrossEntropyLoss()

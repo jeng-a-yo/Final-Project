@@ -33,3 +33,17 @@ archive5 - https://www.kaggle.com/datasets/clarencezhao/handwritten-math-symbol-
 
 References
     * https://www.mdpi.com/1999-4893/15/4/129
+
+
+--- 
+
+[Info] Test Results: Accuracy: 97.37%
+[Info] Spand Time: 550.4617 seconds
+
+[Info] Test Results: Accuracy: 80.63%
+[Info] Spand Time: 1235.5632 seconds
+
+[Info] Test Results: Accuracy: 98.65%
+[Info] Spand Time: 1070.9704 seconds
+
+[Info] Spand Time: 2856.9975 seconds
