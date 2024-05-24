@@ -61,7 +61,7 @@ symbolModel = PaperCNN(in_channels=1, num_classes=len(symbols))
 symbolModel.load_state_dict(torch.load("SymbolModel.pth"))
 
 
-img_path = 'test_image.jpg'
+img_path = 'test_image.png'
 img = Image.open(img_path).convert('RGB')  # Ensure the image is in RGB format
 
 # Apply the transformations

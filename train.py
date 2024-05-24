@@ -13,14 +13,13 @@ from tqdm import tqdm
 
 from myModels import *
 
+# Set random seed for reproducibility
 np.random.seed(42)
 torch.manual_seed(42)
 
+# Uncomment and configure wandb if needed
 # wandb.init(
-#     # set the wandb project where this run will be logged
 #     project="my-awesome-project",
-
-#     # track hyperparameters and run metadata
 #     config={
 #     "learning_rate": 0.001,
 #     "architecture": "CNN",
@@ -29,29 +28,33 @@ torch.manual_seed(42)
 #     }
 # )
 
+# Set device to GPU if available, otherwise use CPU
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-dataDir = ["NumberDataSet", "EnglishDataSet", "SymbolDataSet"]
-modelName = ["NumberModel", "EnglishModel", "SymbolModel"]
-batchSize = 64
-epochs = 10
-learningRate = 0.001
+# Directories for datasets
+data_dirs = ["NumberDataSet", "EnglishDataSet", "SymbolDataSet"]
+model_names = ["NumberModel", "EnglishModel", "SymbolModel"]
+
+# Hyperparameters
+batch_size = 64
+epochs = 3
+learning_rate = 0.001
 momentum = 0.9
 
-
-def MeasureTime(func):
+def measure_time(func):
+    """Decorator to measure the execution time of a function"""
     def wrapper(*args, **kwargs):
-        startTime = time.time()
+        start_time = time.time()
         func(*args, **kwargs)
-        print(f"[Info] Spand Time: {round(time.time() - startTime, 4)} seconds")
+        print(f"[Info] Spent Time: {round(time.time() - start_time, 4)} seconds")
         return
     return wrapper
 
-
-def Train(model, trainLoader, optimizer, criterion, epochs):
-
+def train(model, train_loader, val_loader, optimizer, criterion, epochs):
+    """Train the model and evaluate on the validation set"""
     model.train()
-    trainAcc, trainLoss = [], []
+    train_acc, train_loss = [], []
+    val_acc, val_loss = [], []
 
     for epoch in range(1, epochs+1):
         train_running_loss = 0.0
@@ -59,8 +62,8 @@ def Train(model, trainLoader, optimizer, criterion, epochs):
         total_predictions = 0
 
         # Training loop
-        progressBar = tqdm(enumerate(trainLoader), total=len(trainLoader), desc=f"Epoch {epoch}")
-        for batchIdx, (data, target) in progressBar:
+        progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), desc=f"Epoch {epoch}")
+        for batch_idx, (data, target) in progress_bar:
             optimizer.zero_grad()
             predict = model(data)
             loss = criterion(predict, target)
@@ -72,40 +75,64 @@ def Train(model, trainLoader, optimizer, criterion, epochs):
             correct_predictions += (predicted == target).sum().item()
             total_predictions += target.size(0)
 
-            progressBar.set_postfix({'loss': round(loss.item(), 6)})
+            progress_bar.set_postfix({'loss': round(loss.item(), 6)})
         
-        trainLoss.append(train_running_loss / len(trainLoader))
-        trainAcc.append(correct_predictions / total_predictions)
+        train_loss.append(train_running_loss / len(train_loader))
+        train_acc.append(correct_predictions / total_predictions)
 
-        print(f"[Info] Epoch {epoch}: Training Loss: {trainLoss[-1]}, Training Accuracy: {trainAcc[-1]}")
+        print(f"[Info] Epoch {epoch}: Training Loss: {round(train_loss[-1], 4)}, Training Accuracy: {round(train_acc[-1], 4)}")
+
+        # Validation loop
+        model.eval()
+        val_running_loss = 0.0
+        correct_predictions = 0
+        total_predictions = 0
+
+        progress_bar_val = tqdm(enumerate(val_loader), total=len(val_loader), desc=f"Validation {epoch}")
+        with torch.no_grad():
+            for batch_idx, (data, target) in progress_bar_val:
+                predict = model(data)
+                loss = criterion(predict, target)
+                val_running_loss += loss.item()
+                _, predicted = torch.max(predict, 1)
+                correct_predictions += (predicted == target).sum().item()
+                total_predictions += target.size(0)
+
+                progress_bar_val.set_postfix({'val_loss': round(loss.item(), 6)})
+
+        val_loss.append(val_running_loss / len(val_loader))
+        val_acc.append(correct_predictions / total_predictions)
+
+        print(f"[Info] Epoch {epoch}: Validation Loss: {round(val_loss[-1], 4)}, Validation Accuracy: {round(val_acc[-1], 4)}")
+        print("----------------------------------------------------------------")
+
+        model.train()
 
     print("[Info] Training completed")
+    print("================================================================\n")
 
-    return trainAcc, trainLoss
+    return train_acc, train_loss, val_acc, val_loss
 
 
 
-def Test(model, testLoder):
-
+def test(model, test_loader):
+    """Test the model on the test set"""
     model.eval()
+    correct_cnt = 0
 
-    correctCnt = 0
     with torch.no_grad():
-        progress_bar = tqdm(testLoder, desc="Testing")
+        progress_bar = tqdm(test_loader, desc="Testing")
         for data, target in progress_bar:
             predict = model(data)
             answer = predict.argmax(dim=1, keepdim=True)
-            correctCnt += answer.eq(target.view_as(answer)).sum().item()
-            progress_bar.set_postfix({'accuracy': int(100 * correctCnt / len(testLoder.dataset))})
+            correct_cnt += answer.eq(target.view_as(answer)).sum().item()
+            progress_bar.set_postfix({'accuracy': int(100 * correct_cnt / len(test_loader.dataset))})
     
-    print(f"[Info] Test Results: Accuracy: {round(100 * correctCnt / len(testLoder.dataset), 2)}%")
+    print(f"[Info] Test Results: Accuracy: {round(100 * correct_cnt / len(test_loader.dataset), 2)}%")
 
-
-
-
-@MeasureTime
+@measure_time
 def main():
-
+    """Main function to execute the training and testing pipeline"""
     transform = transforms.Compose([
         transforms.Grayscale(num_output_channels=1),
         transforms.Resize((28, 28)),
@@ -113,63 +140,71 @@ def main():
         transforms.Normalize((0.1307,), (0.3081,)),
     ])
     
-    for i in range(len(dataDir)):
+    for i in range(len(data_dirs)):
         
-        st = time.time()
+        start_time = time.time()
 
-        # Load the dataset
-        dataset = datasets.ImageFolder(root=dataDir[i], transform=transform)
+        # Load dataset
+        dataset = datasets.ImageFolder(root=data_dirs[i], transform=transform)
 
-        trainSize = int(0.8 * len(dataset))
-        testSize = len(dataset) - trainSize
+        # Define the sizes for training, validation, and test sets
+        train_ratio = 0.7
+        val_ratio = 0.15
+        test_ratio = 0.15
 
-        trainSet, testSet = random_split(dataset, [trainSize, testSize])
+        total_size = len(dataset)
+        train_size = int(train_ratio * total_size)
+        val_size = int(val_ratio * total_size)
+        test_size = total_size - train_size - val_size
 
-        trainLoader = DataLoader(trainSet, batch_size=batchSize, shuffle=True)
-        testLoader = DataLoader(testSet, batch_size=batchSize, shuffle=False)
+        # Split the dataset
+        train_set, val_set, test_set = random_split(dataset, [train_size, val_size, test_size])
+
+        # Create data loaders
+        train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+        val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
+        test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
 
         # Build the model
-
-        model = PaperCNN(in_channels=1, num_classes=len(os.listdir(dataDir[i]))).to(device)
+        model = PaperCNN(in_channels=1, num_classes=len(os.listdir(data_dirs[i]))).to(device)
 
         # Define loss function and optimizer
         criterion = torch.nn.CrossEntropyLoss()
-        optimizer = torch.optim.SGD(model.parameters(), lr=learningRate, momentum=momentum)
+        optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum)
 
         # Train the model
-        trainAcc, trainLoss = Train(model, trainLoader, optimizer, criterion, epochs)
+        print(f"Training {data_dirs[i]}\n")
+        train_acc, train_loss, val_acc, val_loss = train(model, train_loader, val_loader, optimizer, criterion, epochs)
 
         # Evaluate the model
-        Test(model, testLoader)
+        test(model, test_loader)
 
-        # Sava the model
-        torch.save(model.state_dict(), f'{modelName[i]}.pth')
+        # Save the model
+        torch.save(model.state_dict(), f'{model_names[i]}.pth')
 
-
-        # make graph
+        # Plot training and validation loss and accuracy
         plt.figure()
-        # loss
-        plt.subplot(2,1,1)
-        plt.plot(trainLoss, label='train loss')
+        # Loss
+        plt.subplot(2, 1, 1)
+        plt.plot(train_loss, label='Train Loss')
+        plt.plot(val_loss, label='Val Loss')
         plt.legend()
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
         plt.title('Loss')
-        # accuracy
-        plt.subplot(2,1,2)
-        plt.plot(trainAcc, label='train acc')
+        # Accuracy
+        plt.subplot(2, 1, 2)
+        plt.plot(train_acc, label='Train Accuracy')
+        plt.plot(val_acc, label='Val Accuracy')
         plt.legend()
         plt.xlabel('Epochs')
         plt.ylabel('Accuracy')
         plt.title('Accuracy')
-        # save figure
+        # Save figure
         plt.tight_layout()
-        plt.savefig(f'{modelName[i]}Graph.png')
+        plt.savefig(f'{model_names[i]}Graph.png')
 
-
-        print(f"[Info] Spand Time: {round(time.time() - st, 4)} seconds")
+        print(f"[Info] Spent Time: {round(time.time() - start_time, 4)} seconds")
         print("================================================================")
 
-
 main()
-
