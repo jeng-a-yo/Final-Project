@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import torchvision
 from torchvision import transforms, datasets
 from torchvision import models
-# from torchinfo import summary
+from torchinfo import summary
 
 class YmshCNN(nn.Module):
 

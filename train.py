@@ -37,7 +37,7 @@ model_names = ["NumberModel", "EnglishModel", "SymbolModel"]
 
 # Hyperparameters
 batch_size = 64
-epochs = 3
+epochs = 30
 learning_rate = 0.001
 momentum = 0.9
 

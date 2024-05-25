@@ -60,7 +60,7 @@ height = 150
 
 numbers = [i for i in range(0, 9+1)]
 
-alphabets = list(string.ascii_letters)
+alphabets = list(sorted(string.ascii_letters))
 
 symbols = [chr(i) for i in range(33, 47+1)] + \
             [chr(i) for i in range(58, 64+1)] + \

@@ -43,7 +43,7 @@ transform = transforms.Compose([
 
 numbers = [i for i in range(0, 9+1)]
 
-alphabets = list(string.ascii_letters)
+alphabets = list(sorted(string.ascii_letters))
 
 symbols = [chr(i) for i in range(33, 47+1)] + \
             [chr(i) for i in range(58, 64+1)] + \
@@ -61,7 +61,7 @@ symbolModel = PaperCNN(in_channels=1, num_classes=len(symbols))
 symbolModel.load_state_dict(torch.load("SymbolModel.pth"))
 
 
-img_path = 'test_image.png'
+img_path = '4707.png'
 img = Image.open(img_path).convert('RGB')  # Ensure the image is in RGB format
 
 # Apply the transformations
