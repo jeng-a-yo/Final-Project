@@ -32,7 +32,7 @@ torch.manual_seed(42)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Directories for datasets
-data_dirs = ["NumberDataSet", "EnglishDataSet", "SymbolDataSet"]
+data_dirs = ["_NumberDataSet", "_EnglishDataSet", "_SymbolDataSet"]
 model_names = ["NumberModel", "EnglishModel", "SymbolModel"]
 
 # Hyperparameters
@@ -52,7 +52,7 @@ def measure_time(func):
 
 def train(model, train_loader, val_loader, optimizer, criterion, epochs):
     """Train the model and evaluate on the validation set"""
-    model.train()
+    model.train()  # Set the model to training mode
     train_acc, train_loss = [], []
     val_acc, val_loss = [], []
 
@@ -64,15 +64,15 @@ def train(model, train_loader, val_loader, optimizer, criterion, epochs):
         # Training loop
         progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), desc=f"Epoch {epoch}")
         for batch_idx, (data, target) in progress_bar:
-            optimizer.zero_grad()
-            predict = model(data)
-            loss = criterion(predict, target)
-            loss.backward()
-            optimizer.step()
+            optimizer.zero_grad()  # Zero the gradients
+            predict = model(data.to(device))  # Forward pass
+            loss = criterion(predict, target.to(device))  # Compute loss
+            loss.backward()  # Backward pass
+            optimizer.step()  # Update parameters
 
             train_running_loss += loss.item()
             _, predicted = torch.max(predict, 1)
-            correct_predictions += (predicted == target).sum().item()
+            correct_predictions += (predicted == target.to(device)).sum().item()
             total_predictions += target.size(0)
 
             progress_bar.set_postfix({'loss': round(loss.item(), 6)})
@@ -83,19 +83,19 @@ def train(model, train_loader, val_loader, optimizer, criterion, epochs):
         print(f"[Info] Epoch {epoch}: Training Loss: {round(train_loss[-1], 4)}, Training Accuracy: {round(train_acc[-1], 4)}")
 
         # Validation loop
-        model.eval()
+        model.eval()  # Set the model to evaluation mode
         val_running_loss = 0.0
         correct_predictions = 0
         total_predictions = 0
 
         progress_bar_val = tqdm(enumerate(val_loader), total=len(val_loader), desc=f"Validation {epoch}")
-        with torch.no_grad():
+        with torch.no_grad():  # No need to compute gradients during validation
             for batch_idx, (data, target) in progress_bar_val:
-                predict = model(data)
-                loss = criterion(predict, target)
+                predict = model(data.to(device))  # Forward pass
+                loss = criterion(predict, target.to(device))  # Compute loss
                 val_running_loss += loss.item()
                 _, predicted = torch.max(predict, 1)
-                correct_predictions += (predicted == target).sum().item()
+                correct_predictions += (predicted == target.to(device)).sum().item()
                 total_predictions += target.size(0)
 
                 progress_bar_val.set_postfix({'val_loss': round(loss.item(), 6)})
@@ -106,26 +106,24 @@ def train(model, train_loader, val_loader, optimizer, criterion, epochs):
         print(f"[Info] Epoch {epoch}: Validation Loss: {round(val_loss[-1], 4)}, Validation Accuracy: {round(val_acc[-1], 4)}")
         print("----------------------------------------------------------------")
 
-        model.train()
+        model.train()  # Set the model back to training mode
 
     print("[Info] Training completed")
     print("================================================================\n")
 
     return train_acc, train_loss, val_acc, val_loss
 
-
-
 def test(model, test_loader):
     """Test the model on the test set"""
-    model.eval()
+    model.eval()  # Set the model to evaluation mode
     correct_cnt = 0
 
     with torch.no_grad():
         progress_bar = tqdm(test_loader, desc="Testing")
         for data, target in progress_bar:
-            predict = model(data)
+            predict = model(data.to(device))  # Forward pass
             answer = predict.argmax(dim=1, keepdim=True)
-            correct_cnt += answer.eq(target.view_as(answer)).sum().item()
+            correct_cnt += answer.eq(target.to(device).view_as(answer)).sum().item()
             progress_bar.set_postfix({'accuracy': int(100 * correct_cnt / len(test_loader.dataset))})
     
     print(f"[Info] Test Results: Accuracy: {round(100 * correct_cnt / len(test_loader.dataset), 2)}%")
@@ -134,10 +132,10 @@ def test(model, test_loader):
 def main():
     """Main function to execute the training and testing pipeline"""
     transform = transforms.Compose([
-        transforms.Grayscale(num_output_channels=1),
-        transforms.Resize((28, 28)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,)),
+        transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
+        transforms.Resize((28, 28)),  # Resize images
+        transforms.ToTensor(),  # Convert to tensor
+        transforms.Normalize((0.1307,), (0.3081,)),  # Normalize the dataset
     ])
     
     for i in range(len(data_dirs)):

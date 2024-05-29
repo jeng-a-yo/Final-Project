@@ -237,8 +237,3 @@ class CNNModel(nn.Module):
         
         x = self.fc3(x)
         return F.log_softmax(x, dim=1)
-
-
-# model = PaperCNN(in_channels=1, num_classes=10)
-# summary(model, input_size=(1, 1, 28, 28), col_names=["input_size", "output_size", "num_params", "trainable"], depth=4)
-

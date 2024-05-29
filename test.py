@@ -5,8 +5,6 @@ from PIL import Image
 import string
 import matplotlib.pyplot as plt
 
-
-
 from myModels import *
 
 def Predict(model, histLabels, img):
@@ -52,19 +50,23 @@ symbols = [chr(i) for i in range(33, 47+1)] + \
             [chr(i) for i in range(123, 126+1)]
 
 numberModel = PaperCNN(in_channels=1, num_classes=len(numbers))
-numberModel.load_state_dict(torch.load("NumberModel.pth"))
+numberModel.load_state_dict(torch.load("Models/NumberModel.pth"))
 
 englishModel = PaperCNN(in_channels=1, num_classes=len(alphabets))
-englishModel.load_state_dict(torch.load("EnglishModel.pth"))
+englishModel.load_state_dict(torch.load("Models/EnglishModel.pth"))
 
 symbolModel = PaperCNN(in_channels=1, num_classes=len(symbols))
-symbolModel.load_state_dict(torch.load("SymbolModel.pth"))
+symbolModel.load_state_dict(torch.load("Models/SymbolModel.pth"))
 
 
-img_path = '4707.png'
+
+img_path = '5169.png'
+# img_path = 'test_image.png'
 img = Image.open(img_path).convert('RGB')  # Ensure the image is in RGB format
 
 # Apply the transformations
 img = transform(img).unsqueeze(0).float()
+print(img.size())
+
 
 Predict(englishModel, alphabets, img)
