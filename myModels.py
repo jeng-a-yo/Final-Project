@@ -56,10 +56,10 @@ class VideoCNN(nn.Module):
         return x
 
 
-class PaperCNN(nn.Module):
+class NumberModel(nn.Module):
 
     def __init__(self, in_channels=1, num_classes=10):
-        super(PaperCNN, self).__init__()
+        super(NumberModel, self).__init__()
         self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=32, kernel_size=3)
         self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
         self.conv3 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1)
@@ -84,23 +84,83 @@ class PaperCNN(nn.Module):
         x = self.fc2(x)
         return x
 
+class CharacterModel(nn.Module):
+    def __init__(self, in_channels=1, num_classes=52):
+        super(CharacterModel, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=32, kernel_size=3)
+        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, padding=1)
+        self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.dropout = nn.Dropout2d(0.25)
+        self.fc1 = nn.Linear(256 * 7 * 7, 64)
+        self.fc2 = nn.Linear(64, num_classes)
+        
+    def forward(self, x):
+        x = nn.functional.relu(self.conv1(x)) # [64, 1, 64, 64] -> [64, 32, 62, 62]
+        x = nn.functional.relu(self.conv2(x)) # [64, 32, 62, 26] -> [64, 64, 62, 62]
+        x = self.maxpool(x)                   # [64, 64, 62, 62] -> [64, 64, 31, 31]
+        x = nn.functional.relu(self.conv3(x)) # [64, 64, 31, 31] -> [64, 128, 31, 31]
+        x = self.maxpool(x)                   # [64, 128, 31, 31] -> [64, 128, 15, 15]
+        x = self.dropout(x)
+        x = nn.functional.relu(self.conv4(x)) # [64, 128, 15, 15] -> [64, 256, 15, 15]
+        x = self.maxpool(x)                   # [64, 256, 15, 15] -> [64, 256, 7, 7]
+        x = self.dropout(x)
+        x = x.view(-1, 256 * 7 * 7)  # Flatten
+        x = self.fc1(x)
+        x = self.fc2(x)
+        return x
+
+class SymbolModel(nn.Module):
+    def __init__(self, in_channels=1, num_classes=31):
+        super(SymbolModel, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=32, kernel_size=3)
+        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, padding=1)
+        self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.dropout = nn.Dropout2d(0.25)
+        self.fc1 = nn.Linear(256 * 5 * 5, 64)
+        self.fc2 = nn.Linear(64, num_classes)
+        
+    def forward(self, x):
+        x = nn.functional.relu(self.conv1(x)) # [64, 1, 45, 45] -> [64, 32, 43, 43]
+        x = nn.functional.relu(self.conv2(x)) # [64, 32, 43, 43] -> [64, 64, 43, 43]
+        x = self.maxpool(x)                   # [64, 64, 43, 43] -> [64, 64, 21, 21]
+        x = nn.functional.relu(self.conv3(x)) # [64, 64, 21, 21] -> [64, 128, 21, 21]
+        x = self.maxpool(x)                   # [64, 128, 21, 21] -> [64, 128, 10, 10]
+        x = self.dropout(x)
+        x = nn.functional.relu(self.conv4(x)) # [64, 128, 10, 10] -> [64, 256, 10, 10]
+        x = self.maxpool(x)                   # [64, 256, 10, 10] -> [64, 256, 5, 5]
+        x = self.dropout(x)
+        x = x.view(-1, 256 * 5 * 5)  # Flatten
+        x = self.fc1(x)
+        x = self.fc2(x)
+        return x
+
 
 class LittleFishModel(nn.Module):
 
     def __init__(self, in_channels=1, num_classes=10):
         super(LittleFishModel, self).__init__()
         self.conv1 = nn.Conv2d(in_channels=1, out_channels=8, kernel_size=(3, 3), stride=(1, 1), padding=(0, 0))
-        self.pool = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
         self.conv2 = nn.Conv2d(in_channels=8, out_channels=16, kernel_size=(3, 3), stride=(1, 1), padding=(0, 0))
+        self.pool = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
         self.fc1 = nn.Linear(in_features=16 * 5 * 5, out_features=num_classes)
+        self.bn1 = nn.BatchNorm2d(8)
+        self.bn2 = nn.BatchNorm2d(16)
 
     def forward(self, x):
         x = self.conv1(x)  # [64, 1, 28, 28] -> [64, 8, 26, 26]
+        x = self.bn1(x)
         x = F.relu(x)
         x = self.pool(x)  # [64, 8, 26, 26] -> [64, 8, 13, 13]
+        
         x = self.conv2(x)  # [64, 8, 13, 13] -> [64, 16, 11, 11]
+        x = self.bn2(x)
         x = F.relu(x)
         x = self.pool(x)  # [64, 16, 11, 11] -> [64, 16, 5, 5]
+
         x = x.reshape(x.shape[0], -1)  # [64, 16, 5, 5] -> [64, 400]
         x = self.fc1(x)  # [64, 400] -> [64, 10]
         return x
@@ -237,3 +297,8 @@ class CNNModel(nn.Module):
         
         x = self.fc3(x)
         return F.log_softmax(x, dim=1)
+
+
+# model = PaperCNN(in_channels=1, num_classes=10)
+# summary(model, input_size=(1, 1, 28, 28), col_names=["input_size", "output_size", "num_params", "trainable"], depth=4)
+

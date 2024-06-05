@@ -9,6 +9,7 @@ from myModels import *
 
 def Predict(model, histLabels, img):
     # Make a prediction
+    model.eval()
     prediction = model(img)
     
     # Apply softmax to get probabilities
@@ -16,14 +17,16 @@ def Predict(model, histLabels, img):
     
     # Create a dictionary of labels and probabilities
     data = dict(zip(histLabels, histValues))
+    for i in data.items():
+        print(i)
     
     # Plot the bar chart using matplotlib
-    plt.figure(figsize=(10, 6))
-    plt.bar(data.keys(), data.values())
-    plt.xlabel('Classes')
-    plt.ylabel('Probability')
-    plt.title('Prediction Probabilities')
-    plt.show()
+    # plt.figure(figsize=(10, 6))
+    # plt.bar(data.keys(), data.values())
+    # plt.xlabel('Classes')
+    # plt.ylabel('Probability')
+    # plt.title('Prediction Probabilities')
+    # plt.show()
     
     # Get the predicted class
     prediction = torch.argmax(prediction, dim=1)
@@ -42,6 +45,8 @@ transform = transforms.Compose([
 numbers = [i for i in range(0, 9+1)]
 
 alphabets = list(sorted(string.ascii_letters))
+_alphabets = [chr(i) for i in range(65, 90+1)] + [chr(i) for i in range(97, 122+1)]
+
 
 symbols = [chr(i) for i in range(33, 47+1)] + \
             [chr(i) for i in range(58, 64+1)] + \
@@ -49,24 +54,27 @@ symbols = [chr(i) for i in range(33, 47+1)] + \
             [chr(i) for i in range(93, 96+1)] + \
             [chr(i) for i in range(123, 126+1)]
 
-numberModel = PaperCNN(in_channels=1, num_classes=len(numbers))
-numberModel.load_state_dict(torch.load("Models/NumberModel.pth"))
+# numberModel = PaperCNN(in_channels=1, num_classes=len(numbers))
+# numberModel.load_state_dict(torch.load("Models/NumberModel.pth"))
 
-englishModel = PaperCNN(in_channels=1, num_classes=len(alphabets))
-englishModel.load_state_dict(torch.load("Models/EnglishModel.pth"))
+# englishModel = LittleFishModel(in_channels=1, num_classes=len(alphabets))
+# englishModel.load_state_dict(torch.load("EnglishModel.pth"))
 
-symbolModel = PaperCNN(in_channels=1, num_classes=len(symbols))
-symbolModel.load_state_dict(torch.load("Models/SymbolModel.pth"))
-
-
-
-img_path = '5169.png'
-# img_path = 'test_image.png'
-img = Image.open(img_path).convert('RGB')  # Ensure the image is in RGB format
-
-# Apply the transformations
-img = transform(img).unsqueeze(0).float()
-print(img.size())
+# symbolModel = LittleFishModel(in_channels=1, num_classes=len(symbols))
+# symbolModel.load_state_dict(torch.load("SymbolModel.pth"))
 
 
-Predict(englishModel, alphabets, img)
+
+# img_path = '5169.png'
+# # img_path = 'test_image.png'
+# img = Image.open(img_path)  # Ensure the image is in RGB format
+
+# # Apply the transformations
+# img = transform(img).unsqueeze(0).float()
+# print(img.size())
+
+
+# Predict(englishModel, alphabets, img)
+
+
+print(len(numbers), len(alphabets), len(symbols))

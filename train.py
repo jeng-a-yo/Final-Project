@@ -32,8 +32,8 @@ torch.manual_seed(42)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Directories for datasets
-data_dirs = ["_NumberDataSet", "_EnglishDataSet", "_SymbolDataSet"]
-model_names = ["NumberModel", "EnglishModel", "SymbolModel"]
+data_dirs = ["_NumberDataSet", "_CharacterDataSet", "_SymbolDataSet"]
+model_names = ["NumberModel", "CharacterModel", "SymbolModel"]
 
 # Hyperparameters
 batch_size = 64
@@ -131,24 +131,45 @@ def test(model, test_loader):
 @measure_time
 def main():
     """Main function to execute the training and testing pipeline"""
-    transform = transforms.Compose([
+
+    NumberTransform = transforms.Compose([
         transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
         transforms.Resize((28, 28)),  # Resize images
         transforms.ToTensor(),  # Convert to tensor
         transforms.Normalize((0.1307,), (0.3081,)),  # Normalize the dataset
     ])
+
+    CharacterTransform = transforms.Compose([
+        transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
+        transforms.Resize((64, 64)),  # Resize images
+        transforms.ToTensor(),  # Convert to tensor
+        transforms.Normalize((0.1307,), (0.3081,)),  # Normalize the dataset
+    ])
+
+    SymbolTransform = transforms.Compose([
+        transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
+        transforms.Resize((45, 45)),  # Resize images
+        transforms.ToTensor(),  # Convert to tensor
+        transforms.Normalize((0.1307,), (0.3081,)),  # Normalize the dataset
+    ])
+
+    transformsList = [NumberTransform, CharacterTransform, SymbolTransform]
+    modelsList = [NumberModel, CharacterModel, SymbolModel]
     
     for i in range(len(data_dirs)):
+
+        if i == 0:
+            continue
+
         
         start_time = time.time()
 
         # Load dataset
-        dataset = datasets.ImageFolder(root=data_dirs[i], transform=transform)
+        dataset = datasets.ImageFolder(root=data_dirs[i], transform=transformsList[i])
 
         # Define the sizes for training, validation, and test sets
         train_ratio = 0.7
         val_ratio = 0.15
-        test_ratio = 0.15
 
         total_size = len(dataset)
         train_size = int(train_ratio * total_size)
@@ -163,8 +184,11 @@ def main():
         val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
         test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
 
+        
         # Build the model
-        model = PaperCNN(in_channels=1, num_classes=len(os.listdir(data_dirs[i]))).to(device)
+        model = modelsList[i]().to(device)
+
+        # Define the number of epochs
 
         # Define loss function and optimizer
         criterion = torch.nn.CrossEntropyLoss()
