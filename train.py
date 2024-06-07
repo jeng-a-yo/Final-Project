@@ -4,7 +4,6 @@ import cv2
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-# import wandb
 
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader, random_split
@@ -17,17 +16,6 @@ from myModels import *
 np.random.seed(42)
 torch.manual_seed(42)
 
-# Uncomment and configure wandb if needed
-# wandb.init(
-#     project="my-awesome-project",
-#     config={
-#     "learning_rate": 0.001,
-#     "architecture": "CNN",
-#     "dataset": [{"dataset": "NumberDataSet"}, {"dataset": "EnglishDataSet"}, {"dataset": "SymbolDataSet"}],
-#     "epochs": 30,
-#     }
-# )
-
 # Set device to GPU if available, otherwise use CPU
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -37,7 +25,7 @@ model_names = ["NumberModel", "CharacterModel", "SymbolModel"]
 
 # Hyperparameters
 batch_size = 64
-epochs = 30
+epochs = 10
 learning_rate = 0.001
 momentum = 0.9
 
@@ -158,7 +146,7 @@ def main():
     
     for i in range(len(data_dirs)):
 
-        if i == 0:
+        if i == 0 or i == 2:
             continue
 
         
@@ -180,7 +168,7 @@ def main():
         train_set, val_set, test_set = random_split(dataset, [train_size, val_size, test_size])
 
         # Create data loaders
-        train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
+        train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=False)
         val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
         test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
 

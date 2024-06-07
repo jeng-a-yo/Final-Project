@@ -17,8 +17,8 @@ def Predict(model, histLabels, img):
     
     # Create a dictionary of labels and probabilities
     data = dict(zip(histLabels, histValues))
-    for i in data.items():
-        print(i)
+    # for i in data.items():
+    #     print(i)
     
     # Plot the bar chart using matplotlib
     # plt.figure(figsize=(10, 6))
@@ -35,12 +35,29 @@ def Predict(model, histLabels, img):
     print(f"Prediction: {histLabels[prediction]}")
 
 
-transform = transforms.Compose([
-        transforms.Grayscale(num_output_channels=1),
-        transforms.Resize((28, 28)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,)),
-    ])
+NumberTransform = transforms.Compose([
+    transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
+    transforms.Resize((28, 28)),  # Resize images
+    transforms.ToTensor(),  # Convert to tensor
+    transforms.Normalize((0.1307,), (0.3081,)),  # Normalize the dataset
+])
+
+CharacterTransform = transforms.Compose([
+    transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
+    transforms.Resize((64, 64)),  # Resize images
+    transforms.ToTensor(),  # Convert to tensor
+    transforms.Normalize((0.1307,), (0.3081,)),  # Normalize the dataset
+])
+
+SymbolTransform = transforms.Compose([
+    transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
+    transforms.Resize((45, 45)),  # Resize images
+    transforms.ToTensor(),  # Convert to tensor
+    transforms.Normalize((0.1307,), (0.3081,)),  # Normalize the dataset
+])
+
+transformsList = [NumberTransform, CharacterTransform, SymbolTransform]
+modelsList = [NumberModel, CharacterModel, SymbolModel]
 
 numbers = [i for i in range(0, 9+1)]
 
@@ -54,27 +71,24 @@ symbols = [chr(i) for i in range(33, 47+1)] + \
             [chr(i) for i in range(93, 96+1)] + \
             [chr(i) for i in range(123, 126+1)]
 
-# numberModel = PaperCNN(in_channels=1, num_classes=len(numbers))
-# numberModel.load_state_dict(torch.load("Models/NumberModel.pth"))
+numberModel = NumberModel()
+numberModel.load_state_dict(torch.load("Models/NumberModel.pth"))
 
-# englishModel = LittleFishModel(in_channels=1, num_classes=len(alphabets))
-# englishModel.load_state_dict(torch.load("EnglishModel.pth"))
+characterModel = CharacterModel()
+characterModel.load_state_dict(torch.load("CharacterModel.pth"))
 
-# symbolModel = LittleFishModel(in_channels=1, num_classes=len(symbols))
-# symbolModel.load_state_dict(torch.load("SymbolModel.pth"))
-
-
-
-# img_path = '5169.png'
-# # img_path = 'test_image.png'
-# img = Image.open(img_path)  # Ensure the image is in RGB format
-
-# # Apply the transformations
-# img = transform(img).unsqueeze(0).float()
-# print(img.size())
+symbolModel = SymbolModel()
+symbolModel.load_state_dict(torch.load("SymbolModel.pth"))
 
 
-# Predict(englishModel, alphabets, img)
+
+img_path = '5169.png'
+img = Image.open(img_path)
+
+# Apply the transformations
+img = CharacterTransform(img).unsqueeze(0).float()
+print(img.size())
 
 
-print(len(numbers), len(alphabets), len(symbols))
+Predict(characterModel, alphabets, img)
+# Predict(symbolModel, symbols, img)

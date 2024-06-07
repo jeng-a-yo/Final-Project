@@ -18,21 +18,15 @@ This project focuses on the training and evaluation of convolutional neural netw
 - **Classes**: ASCII Code `[33 ~ 91, 93 ~ 126]`
 - **Image Shape**: `(64, 64, 3)`
 
-#### 4. **Archive2**
-- **Source**: [Kaggle - English Handwritten Characters Dataset](https://www.kaggle.com/datasets/dhruvildave/english-handwritten-characters-dataset/data?select=Img)
-- **Classes**: `[0 ~ 9, A ~ Z, a ~ z]`
-- **Preprocessing**: Need to invert images
-- **Image Shape**: `(900, 1200, 3)`
-
-#### 5. **Archive3**
+#### 4. **Archive3**
 - **Source**: [Kaggle - Handwritten Math Symbols](https://www.kaggle.com/datasets/xainano/handwrittenmathsymbols/data)
-- **Classes**: `[-, ',', !, (, ), +, 0]`
+- **Classes**: `[,-, ',', !, (, ), +, 0]`
 - **Preprocessing**: Need to invert images
 - **Image Shape**: `(45, 45, 3)`
 
-#### 6. **Not Used Dataset**
+#### 5. **Not Used Dataset**
 - **Source**: [Kaggle - Handwritten Math Symbol Dataset](https://www.kaggle.com/datasets/clarencezhao/handwritten-math-symbol-dataset)
-- **Classes**: N/A
+- **Source**: [Kaggle - English Handwritten Characters Dataset](https://www.kaggle.com/datasets/dhruvildave/english-handwritten-characters-dataset/data?select=Img)
 
 ### Model Structure
 
@@ -85,3 +79,11 @@ Estimated Total Size (MB): 2.91
 
 ### References
 - [MDPI - Algorithms Journal](https://www.mdpi.com/1999-4893/15/4/129)
+
+
+
+[Info] Test Results: Accuracy: 84.2%
+[Info] Spent Time: 5607.5749 seconds
+
+[Info] Test Results: Accuracy: 99.3%
+[Info] Spent Time: 3360.8722 seconds
