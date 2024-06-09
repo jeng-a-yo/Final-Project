@@ -25,7 +25,7 @@ model_names = ["NumberModel", "CharacterModel", "SymbolModel"]
 
 # Hyperparameters
 batch_size = 64
-epochs = 10
+epochs = 30
 learning_rate = 0.001
 momentum = 0.9
 
@@ -37,58 +37,6 @@ def measure_time(func):
         print(f"[Info] Spent Time: {round(time.time() - start_time, 4)} seconds")
         return
     return wrapper
-
-def train(model, train_loader, train_set, val_loader, val_set, optimizer, criterion, epochs):
-    """Train the model and evaluate on the validation set"""
-    model.train()  # Set the model to training mode
-    train_acc, train_loss = [], []
-    val_acc, val_loss = [], []
-
-    for epoch in range(1, epochs+1):
-        print(f"\nEpoch {epoch:2d}/{epochs:2d}")
-        running_loss, running_acc = 0.0, 0.0
-        for (images, labels) in tqdm(train_loader):
-            images = images.to(device)
-            labels = labels.to(device)
-
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            running_loss += loss.item()
-            _, preds = torch.max(outputs, 1)
-            running_acc += (preds == labels).sum().item()
-
-        epoch_loss = running_loss / len(train_loader)
-        epoch_acc = running_acc / len(train_set)
-        train_loss.append(epoch_loss)
-        train_acc.append(epoch_acc)
-
-        model.eval()
-        running_loss, running_loss = 0.0, 0.0
-        with torch.no_grad():
-            for (images, labels) in tqdm(val_loader):
-                images = images.to(device)
-                labels = labels.to(device)
-
-                outputs = model(images)
-                loss = criterion(outputs, labels)
-
-                running_loss += loss.item()
-                _, preds = torch.max(outputs, 1)
-                running_acc += torch.sum(preds == labels.data).item()
-        
-        epoch_loss = running_loss / len(val_loader)
-        epoch_acc = running_acc / len(val_set)
-        val_loss.append(epoch_loss)
-        val_acc.append(epoch_acc)
-
-    return train_acc, train_loss, val_acc, val_loss
-    
-
 
 def _train(model, train_loader, val_loader, optimizer, criterion, epochs):
     """Train the model and evaluate on the validation set"""
