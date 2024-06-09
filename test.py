@@ -14,11 +14,12 @@ def Predict(model, histLabels, img):
     
     # Apply softmax to get probabilities
     histValues = F.softmax(prediction, dim=1).detach().numpy().flatten().tolist()
+    # print(histValues)
     
     # Create a dictionary of labels and probabilities
     data = dict(zip(histLabels, histValues))
-    # for i in data.items():
-    #     print(i)
+    for i in data.items():
+        print(i)
     
     # Plot the bar chart using matplotlib
     # plt.figure(figsize=(10, 6))
@@ -30,7 +31,9 @@ def Predict(model, histLabels, img):
     
     # Get the predicted class
     prediction = torch.argmax(prediction, dim=1)
+    print(prediction)
     prediction = prediction.item()
+    print(prediction)
     
     print(f"Prediction: {histLabels[prediction]}")
 

@@ -38,7 +38,59 @@ def measure_time(func):
         return
     return wrapper
 
-def train(model, train_loader, val_loader, optimizer, criterion, epochs):
+def train(model, train_loader, train_set, val_loader, val_set, optimizer, criterion, epochs):
+    """Train the model and evaluate on the validation set"""
+    model.train()  # Set the model to training mode
+    train_acc, train_loss = [], []
+    val_acc, val_loss = [], []
+
+    for epoch in range(1, epochs+1):
+        print(f"\nEpoch {epoch:2d}/{epochs:2d}")
+        running_loss, running_acc = 0.0, 0.0
+        for (images, labels) in tqdm(train_loader):
+            images = images.to(device)
+            labels = labels.to(device)
+
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+            _, preds = torch.max(outputs, 1)
+            running_acc += (preds == labels).sum().item()
+
+        epoch_loss = running_loss / len(train_loader)
+        epoch_acc = running_acc / len(train_set)
+        train_loss.append(epoch_loss)
+        train_acc.append(epoch_acc)
+
+        model.eval()
+        running_loss, running_loss = 0.0, 0.0
+        with torch.no_grad():
+            for (images, labels) in tqdm(val_loader):
+                images = images.to(device)
+                labels = labels.to(device)
+
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+
+                running_loss += loss.item()
+                _, preds = torch.max(outputs, 1)
+                running_acc += torch.sum(preds == labels.data).item()
+        
+        epoch_loss = running_loss / len(val_loader)
+        epoch_acc = running_acc / len(val_set)
+        val_loss.append(epoch_loss)
+        val_acc.append(epoch_acc)
+
+    return train_acc, train_loss, val_acc, val_loss
+    
+
+
+def _train(model, train_loader, val_loader, optimizer, criterion, epochs):
     """Train the model and evaluate on the validation set"""
     model.train()  # Set the model to training mode
     train_acc, train_loss = [], []
@@ -168,7 +220,7 @@ def main():
         train_set, val_set, test_set = random_split(dataset, [train_size, val_size, test_size])
 
         # Create data loaders
-        train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=False)
+        train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
         val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
         test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
 
@@ -183,8 +235,8 @@ def main():
         optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum)
 
         # Train the model
-        print(f"Training {data_dirs[i]}\n")
-        train_acc, train_loss, val_acc, val_loss = train(model, train_loader, val_loader, optimizer, criterion, epochs)
+        print(f"Training {data_dirs[i]}")
+        train_acc, train_loss, val_acc, val_loss = train(model, train_loader, train_set, val_loader, val_set, optimizer, criterion, epochs)
 
         # Evaluate the model
         test(model, test_loader)
