@@ -2,9 +2,9 @@ import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 import numpy as np
 import pandas as pd
-import cv2
 from PIL import Image
 import string
+import os
 
 from myModels import *
 
@@ -15,25 +15,29 @@ st.markdown("# Handwritten Character Recognition")
 
 selectedModels = st.sidebar.multiselect("Select Model", ["Number Model", "Character Model", "Symbol Model"])
 
-
-def LoadModel():
-    numberModel = torch.load("NumberModel.pth")
-    englishModel = torch.load("EnglishModel.pth")
-    symbolModel =torch.load("SymbolModel.pth")
-
-    return numberModel, englishModel, symbolModel
+def magic_shift(lst, shift):
+    n = len(lst)
+    new_lst = [None] * n
+    for i in range(n):
+        new_lst[(i + shift) % n] = lst[i]
+    return new_lst
 
 def Predict(model, histLabels, img):
 
+    model.eval()
     prediction = model(img)
+
+    MAGIC_NUMBER_MAP = {10:0, 52:23, 31:4}
+    MAGIC_NUMBER = MAGIC_NUMBER_MAP[len(histLabels)]
+
     histValues = F.softmax(prediction).detach().numpy().flatten().tolist()
-    data = dict(zip(histLabels, histValues))
+    data = dict(zip(magic_shift(histLabels, MAGIC_NUMBER), histValues))
     st.bar_chart(data)
 
     prediction = torch.argmax(prediction, dim=1)
     prediction = prediction.item()
 
-    st.write(f"Prediction: {histLabels[prediction]}")
+    st.write(f"Prediction: {histLabels[prediction-MAGIC_NUMBER]}")
 
 
 canvas_result = st_canvas(
@@ -68,14 +72,39 @@ symbols = [chr(i) for i in range(33, 47+1)] + \
             [chr(i) for i in range(93, 96+1)] + \
             [chr(i) for i in range(123, 126+1)]
 
-numberModel = PaperCNN(in_channels=1, num_classes=len(numbers))
-numberModel.load_state_dict(torch.load("Models/NumberModel.pth"))
 
-englishModel = PaperCNN(in_channels=1, num_classes=len(alphabets))
-englishModel.load_state_dict(torch.load("Models/EnglishModel.pth"))
+model_folder = "Models"
 
-symbolModel = PaperCNN(in_channels=1, num_classes=len(symbols))
-symbolModel.load_state_dict(torch.load("Models/SymbolModel.pth"))
+numberModel = NumberModel(in_channels=1, num_classes=len(numbers))
+numberModel.load_state_dict(torch.load(os.path.join(model_folder, "NumberModel.pth")))
+
+characterModel = CharacterModel(in_channels=1, num_classes=len(alphabets))
+characterModel.load_state_dict(torch.load(os.path.join(model_folder, "CharacterModel.pth")))
+
+symbolModel = SymbolModel(in_channels=1, num_classes=len(symbols))
+symbolModel.load_state_dict(torch.load(os.path.join(model_folder, "SymbolModel.pth")))
+
+
+NumberTransform = transforms.Compose([
+    transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
+    transforms.Resize((28, 28)),  # Resize images
+    transforms.ToTensor(),  # Convert to tensor
+    transforms.Normalize((0.1307,), (0.3081,)),  # Normalize the dataset
+])
+
+CharacterTransform = transforms.Compose([
+    transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
+    transforms.Resize((64, 64)),  # Resize images
+    transforms.ToTensor(),  # Convert to tensor
+    transforms.Normalize((0.1307,), (0.3081,)),  # Normalize the dataset
+])
+
+SymbolTransform = transforms.Compose([
+    transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
+    transforms.Resize((45, 45)),  # Resize images
+    transforms.ToTensor(),  # Convert to tensor
+    transforms.Normalize((0.1307,), (0.3081,)),  # Normalize the dataset
+])
 
 
 
@@ -87,17 +116,18 @@ if st.button("Recognize"):
 
     st.image(img, width=width)
 
-    img = transform(img).unsqueeze(0).float()
-
     
     if len(selectedModels) == 0:
         st.write("Please select at least one model")
     else:
         if "Number Model" in selectedModels:
-            Predict(numberModel, numbers, img)
+            number_input_img = NumberTransform(img).unsqueeze(0).float()
+            Predict(numberModel, numbers, number_input_img)
         if "Character Model" in selectedModels:
-            Predict(englishModel, alphabets, img)
+            character_input_img = CharacterTransform(img).unsqueeze(0).float()
+            Predict(characterModel, alphabets, character_input_img)
         if "Symbol Model" in selectedModels:
+            img = SymbolTransform(img).unsqueeze(0).float()
             Predict(symbolModel, symbols, img)
 
     

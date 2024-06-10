@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
 from torchvision import transforms, datasets
-from torchvision import models
-from torchinfo import summary
+# from torchvision import models
+# from torchinfo import summary
 
 class YmshCNN(nn.Module):
 
@@ -84,85 +84,30 @@ class NumberModel(nn.Module):
         return x
 
 class CharacterModel(nn.Module):
-
     def __init__(self, in_channels=1, num_classes=52):
         super(CharacterModel, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=32, kernel_size=3)
-        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, padding=0)
+        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=0)
         self.conv3 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1)
-        self.conv4 = nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3)
-        self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.dropout = nn.Dropout2d(0.25)
-        self.fc1 = nn.Linear(256 * 6 * 6, 64)
-        self.fc2 = nn.Linear(64, num_classes)
-        
-    def forward(self, x):
-        x = nn.functional.relu(self.conv1(x)) # [64, 1, 64, 64] -> [64, 32, 62, 62]
-        x = nn.functional.relu(self.conv2(x)) # [64, 32, 62, 62] -> [64, 64, 62, 62]
-        x = self.maxpool(x)                   # [64, 64, 62, 62] -> [64, 64, 31, 31]
-        x = nn.functional.relu(self.conv3(x)) # [64, 64, 31, 31] -> [64, 128, 31, 31]
-        x = self.maxpool(x)                   # [64, 128, 31, 31] -> [64, 128, 15, 15]
-        x = self.dropout(x)
-        x = nn.functional.relu(self.conv4(x)) # [64, 128, 15, 15] -> [64, 256, 13, 13]
-        x = self.maxpool(x)                   # [64, 256, 13, 13] -> [64, 256, 6, 6]
-        x = self.dropout(x)
-        x = x.view(-1, 256 * 6 * 6)  # Flatten
-        x = self.fc1(x)
-        x = self.fc2(x)
-        return x
-
-
-# class CharacterModel(nn.Module):
-#     def __init__(self, num_classes=52):
-#         super(CharacterModel, self).__init__()
-#         self.conv1 = nn.Conv2d(in_channels=1, out_channels=32, kernel_size=2, padding=0)
-#         self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=2, padding=0)
-#         self.conv3 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=2, padding=0)
-#         self.conv4 = nn.Conv2d(in_channels=128, out_channels=256, kernel_size=2, padding=0)
-#         self.pool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-#         # Adjusted fully connected layer input size to match the 5x5 feature maps
-#         self.fc1 = nn.Linear(256 * 3 * 3, 256)
-#         self.fc2 = nn.Linear(256, num_classes)
-
-#     def forward(self, x):
-#         x = self.pool(F.relu(self.conv1(x)))  # [64, 1, 64, 64] -> [64, 32, 63, 63] -> [64, 32, 31, 31]
-#         x = F.dropout(x, 0.2)
-#         x = self.pool(F.relu(self.conv2(x)))  # [64, 32, 31, 31] -> [64, 64, 30, 30] -> [64, 64, 15, 15]
-#         x = F.dropout(x, 0.2)
-#         x = self.pool(F.relu(self.conv3(x)))  # [64, 64, 16, 16] -> [64, 128, 16, 16] -> [64, 128, 8, 8]
-#         x = F.dropout(x, 0.5)
-#         x = self.pool(F.relu(self.conv4(x)))  # [64, 128, 8, 8] -> [64, 256, 7, 7] -> [64, 256, 3, 3]
-#         x = F.dropout(x, 0.5)
-#         x = x.view(-1, 256 * 3 * 3)
-#         x = F.relu(self.fc1(x))
-#         x = F.dropout(x, 0.5)
-#         x = F.relu(self.fc2(x))
-#         return x
-
-
-class LittleFishCharacterModel(nn.Module):
-    def __init__(self, in_channels=1, num_classes=52):
-        super(LittleFishCharacterModel, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=8, kernel_size=(3, 3), stride=(1, 1), padding=(0, 0))
-        self.conv2 = nn.Conv2d(in_channels=8, out_channels=16, kernel_size=(3, 3), stride=(1, 1), padding=(0, 0))
-        self.pool = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
-        self.fc1 = nn.Linear(in_features=16 * 14 * 14, out_features=num_classes)
-        self.bn1 = nn.BatchNorm2d(8)
-        self.bn2 = nn.BatchNorm2d(16)
+        self.conv4 = nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, padding=1)
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        # Adjusted fully connected layer input size to match the 5x5 feature maps
+        self.fc1 = nn.Linear(256 * 3 * 3, 256)
+        self.fc2 = nn.Linear(256, num_classes)
 
     def forward(self, x):
-        x = self.conv1(x)  # [64, 1, 64, 64] -> [64, 8, 62, 62]
-        x = self.bn1(x)
-        x = F.relu(x)
-        x = self.pool(x)  # [64, 8, 62, 62] -> [64, 8, 31, 31]
-        
-        x = self.conv2(x)  # [64, 8, 31, 31] -> [64, 16, 29, 29]
-        x = self.bn2(x)
-        x = F.relu(x)
-        x = self.pool(x)  # [64, 16, 29, 29] -> [64, 16, 14, 14]
-
-        x = x.reshape(x.shape[0], -1)  # [64, 16, 14, 14] -> [64, 3136]
-        x = self.fc1(x)  # [64, 3136] -> [64, 52]
+        x = self.pool(F.relu(self.conv1(x)))  # [64, 1, 64, 64] -> [64, 32, 62, 62] -> [64, 32, 31, 31]
+        x = F.dropout(x, 0.2)
+        x = self.pool(F.relu(self.conv2(x)))  # [64, 32, 31, 31] -> [64, 64, 29, 29] -> [64, 64, 14, 14]
+        x = F.dropout(x, 0.2)
+        x = self.pool(F.relu(self.conv3(x)))  # [64, 64, 14, 14] -> [64, 128, 14, 14] -> [64, 128, 7, 7]
+        x = F.dropout(x, 0.5)
+        x = self.pool(F.relu(self.conv4(x)))  # [64, 128, 7, 7] -> [64, 256, 7, 7] -> [64, 256, 3, 3]
+        x = F.dropout(x, 0.5)
+        x = x.view(-1, 256 * 3 * 3)
+        x = F.relu(self.fc1(x))
+        x = F.dropout(x, 0.5)
+        x = F.relu(self.fc2(x))
         return x
 
 class SymbolModel(nn.Module):
@@ -353,6 +298,12 @@ class CNNModel(nn.Module):
         return F.log_softmax(x, dim=1)
 
 
-# model = PaperCNN(in_channels=1, num_classes=10)
+# model = NumberModel(in_channels=1, num_classes=10)
 # summary(model, input_size=(1, 1, 28, 28), col_names=["input_size", "output_size", "num_params", "trainable"], depth=4)
+
+# model = CharacterModel(in_channels=1, num_classes=10)
+# summary(model, input_size=(1, 1, 64, 64), col_names=["input_size", "output_size", "num_params", "trainable"], depth=4)
+
+# model = SymbolModel(in_channels=1, num_classes=10)
+# summary(model, input_size=(1, 1, 45, 45), col_names=["input_size", "output_size", "num_params", "trainable"], depth=4)
 

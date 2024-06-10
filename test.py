@@ -7,23 +7,33 @@ import matplotlib.pyplot as plt
 
 from myModels import *
 
+def magic_shift(lst, shift):
+    n = len(lst)
+    new_lst = [None] * n
+    for i in range(n):
+        new_lst[(i + shift) % n] = lst[i]
+    return new_lst
+
 def Predict(model, histLabels, img):
     # Make a prediction
     model.eval()
     prediction = model(img)
+
+    MAGIC_NUMBER_MAP = {10:0, 52:23, 31:4}
+    MAGIC_NUMBER = MAGIC_NUMBER_MAP[len(histLabels)]
+
     
     # Apply softmax to get probabilities
     histValues = F.softmax(prediction, dim=1).detach().numpy().flatten().tolist()
-    # print(histValues)
     
     # Create a dictionary of labels and probabilities
-    data = dict(zip(histLabels, histValues))
-    for i in data.items():
-        print(i)
+    data = dict(zip(magic_shift(histLabels, MAGIC_NUMBER), histValues))
+    sorted_data = dict(sorted(data.items(), key=lambda x: x[0]))
+
     
-    # Plot the bar chart using matplotlib
+    #　Plot the bar chart using matplotlib
     # plt.figure(figsize=(10, 6))
-    # plt.bar(data.keys(), data.values())
+    # plt.bar(sorted_data.keys(), sorted_data.values())
     # plt.xlabel('Classes')
     # plt.ylabel('Probability')
     # plt.title('Prediction Probabilities')
@@ -31,11 +41,9 @@ def Predict(model, histLabels, img):
     
     # Get the predicted class
     prediction = torch.argmax(prediction, dim=1)
-    print(prediction)
     prediction = prediction.item()
-    print(prediction)
     
-    print(f"Prediction: {histLabels[prediction]}")
+    print(f"Prediction: {histLabels[prediction-MAGIC_NUMBER]}")
 
 
 NumberTransform = transforms.Compose([
@@ -74,24 +82,27 @@ symbols = [chr(i) for i in range(33, 47+1)] + \
             [chr(i) for i in range(93, 96+1)] + \
             [chr(i) for i in range(123, 126+1)]
 
+print(len(symbols))
+
 numberModel = NumberModel()
 numberModel.load_state_dict(torch.load("Models/NumberModel.pth"))
 
 characterModel = CharacterModel()
-characterModel.load_state_dict(torch.load("CharacterModel.pth"))
+characterModel.load_state_dict(torch.load("Models/CharacterModel.pth"))
 
 symbolModel = SymbolModel()
-symbolModel.load_state_dict(torch.load("SymbolModel.pth"))
+symbolModel.load_state_dict(torch.load("Models/SymbolModel.pth"))
 
 
 
-img_path = '5169.png'
+img_path = '8261.png'
 img = Image.open(img_path)
 
 # Apply the transformations
-img = CharacterTransform(img).unsqueeze(0).float()
+# img = CharacterTransform(img).unsqueeze(0).float()
+img = SymbolTransform(img).unsqueeze(0).float()
 print(img.size())
 
 
-Predict(characterModel, alphabets, img)
-# Predict(symbolModel, symbols, img)
+# Predict(characterModel, alphabets, img)
+Predict(symbolModel, symbols, img)

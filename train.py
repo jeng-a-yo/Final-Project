@@ -45,7 +45,7 @@ def _train(model, train_loader, val_loader, optimizer, criterion, epochs):
     val_acc, val_loss = [], []
 
     for epoch in range(1, epochs+1):
-        train_running_loss = 0.0
+        train_running_loss = 0.
         correct_predictions = 0
         total_predictions = 0
 
@@ -120,40 +120,39 @@ def test(model, test_loader):
 def main():
     """Main function to execute the training and testing pipeline"""
 
-    NumberTransform = transforms.Compose([
+    number_transform = transforms.Compose([
         transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
         transforms.Resize((28, 28)),  # Resize images
         transforms.ToTensor(),  # Convert to tensor
         transforms.Normalize((0.1307,), (0.3081,)),  # Normalize the dataset
     ])
 
-    CharacterTransform = transforms.Compose([
+    character_transform = transforms.Compose([
         transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
         transforms.Resize((64, 64)),  # Resize images
         transforms.ToTensor(),  # Convert to tensor
         transforms.Normalize((0.1307,), (0.3081,)),  # Normalize the dataset
     ])
 
-    SymbolTransform = transforms.Compose([
+    symbol_transform = transforms.Compose([
         transforms.Grayscale(num_output_channels=1),  # Convert to grayscale
         transforms.Resize((45, 45)),  # Resize images
         transforms.ToTensor(),  # Convert to tensor
         transforms.Normalize((0.1307,), (0.3081,)),  # Normalize the dataset
     ])
 
-    transformsList = [NumberTransform, CharacterTransform, SymbolTransform]
-    modelsList = [NumberModel, CharacterModel, SymbolModel]
+    transforms_list = [number_transform, character_transform, symbol_transform]
+    models_list = [NumberModel, CharacterModel, SymbolModel]
     
     for i in range(len(data_dirs)):
 
         if i == 0 or i == 2:
             continue
-
         
         start_time = time.time()
 
         # Load dataset
-        dataset = datasets.ImageFolder(root=data_dirs[i], transform=transformsList[i])
+        dataset = datasets.ImageFolder(root=data_dirs[i], transform=transforms_list[i])
 
         # Define the sizes for training, validation, and test sets
         train_ratio = 0.7
@@ -174,7 +173,7 @@ def main():
 
         
         # Build the model
-        model = modelsList[i]().to(device)
+        model = models_list[i]().to(device)
 
         # Define the number of epochs
 
@@ -184,7 +183,7 @@ def main():
 
         # Train the model
         print(f"Training {data_dirs[i]}")
-        train_acc, train_loss, val_acc, val_loss = train(model, train_loader, train_set, val_loader, val_set, optimizer, criterion, epochs)
+        train_acc, train_loss, val_acc, val_loss = _train(model, train_loader, val_loader, optimizer, criterion, epochs)
 
         # Evaluate the model
         test(model, test_loader)
