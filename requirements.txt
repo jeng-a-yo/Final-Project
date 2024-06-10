@@ -1,0 +1,9 @@
+ipykernel
+torch
+torchvision
+tqdm
+matplotlib
+streamlit
+streamlit_drawable_canvas
+opencv-python-headless
+numpy
